@@ -821,7 +821,7 @@ class KingTable extends EventsEmitter {
    * Define a function that allows to preprocess data upon fetching.
    * Extensibility point.
    */
-  prepareData(data) {
+  prepareData(data, serverObject) {
     // handle this.data (e.g. parsing dates, etc.)
     // data === this.data
     return this;
@@ -1287,7 +1287,7 @@ class KingTable extends EventsEmitter {
 
           subset = self.normalizeCollection(subset);
           // set data
-          self.prepareData(subset);
+          self.prepareData(subset, data);
           self.data = subset;
           self.initColumns();
           self.formatValues(subset);
