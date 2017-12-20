@@ -1467,7 +1467,7 @@ class KingTable extends EventsEmitter {
       o = self.options,
       lruCacheSize = o.lruCacheSize,
       store = self.getDataStore(),
-      useLru = !!(lruCacheSize && store);
+      useLru = !!(lruCacheSize && store) && ! options.notLru;
     var anchorTime = "anchorTime";
     if (useLru) {
       // check if there is data in the store
@@ -1920,7 +1920,7 @@ class KingTable extends EventsEmitter {
     //All items are not in self.data 
     if(self.pagination.totalItemsCount != self.data.length)
     {
-      self.getFetchPromiseWithCache({sortBy:''})
+      self.getFetchPromiseWithCache({sortBy:''},{notLru: true})
       .then(function done(data)
       {
         var itemsToDisplay = self.getItemsToDisplay(data.subset);
@@ -1947,6 +1947,7 @@ class KingTable extends EventsEmitter {
         }
         if (contents)
           FileUtil.exportfile(filename, contents, exportFormat.type);
+        self.refresh();
       });
     }
     else
