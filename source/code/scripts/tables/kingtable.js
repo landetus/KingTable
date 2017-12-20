@@ -1668,10 +1668,10 @@ class KingTable extends EventsEmitter {
   /**
    * Returns a list of items to display for this table at its current state.
    */
-  getItemsToDisplay() {
+  getItemsToDisplay(dataToExport) {
     var self = this, 
         options = self.options,
-        data = self.data;
+        data = dataToExport || self.data;
     if (!data || !data.length)
       return [];
     //
@@ -1917,30 +1917,65 @@ class KingTable extends EventsEmitter {
       columns = self.getColumnsForExport();
     if (!exportFormat || !exportFormat.type) raise(30, "Missing format information");
 
-    var itemsToDisplay = self.getData({ itemCount: false });
-    var contents = "";
-    if (exportFormat.handler) {
-      //user defined handler
-      contents = exportFormat.handler.call(self, itemsToDisplay);
-    } else {
-      //use default export handlers
-      switch (format) {
-        case "csv":
-          var data = self.optimizeCollection(itemsToDisplay);
-          contents = csv.serialize(data, options.csvOptions);
-          break;
-        case "json":
-          contents = json.compose(itemsToDisplay, 2, 2);
-          break;
-        case "xml":
-          contents = self.dataToXml(itemsToDisplay);
-          break;
-        default:
-          throw "export format " + format + "not implemented";
-      }
+    //All items are not in self.data 
+    if(self.pagination.totalItemsCount != self.data.length)
+    {
+      self.getFetchPromiseWithCache({sortBy:''})
+      .then(function done(data)
+      {
+        var itemsToDisplay = self.getItemsToDisplay(data.subset);
+        var contents = "";
+        if (exportFormat.handler) {
+          //user defined handler
+          contents = exportFormat.handler.call(self, itemsToDisplay);
+        } else {
+          //use default export handlers
+          switch (format) {
+            case "csv":
+              var data = self.optimizeCollection(itemsToDisplay);
+              contents = csv.serialize(data, options.csvOptions);
+              break;
+            case "json":
+              contents = json.compose(itemsToDisplay, 2, 2);
+              break;
+            case "xml":
+              contents = self.dataToXml(itemsToDisplay);
+              break;
+            default:
+              throw "export format " + format + "not implemented";
+          }
+        }
+        if (contents)
+          FileUtil.exportfile(filename, contents, exportFormat.type);
+      });
     }
-    if (contents)
-      FileUtil.exportfile(filename, contents, exportFormat.type);
+    else
+    {
+      var itemsToDisplay = self.getData({ itemCount: false });
+      var contents = "";
+      if (exportFormat.handler) {
+        //user defined handler
+        contents = exportFormat.handler.call(self, itemsToDisplay);
+      } else {
+        //use default export handlers
+        switch (format) {
+          case "csv":
+            var data = self.optimizeCollection(itemsToDisplay);
+            contents = csv.serialize(data, options.csvOptions);
+            break;
+          case "json":
+            contents = json.compose(itemsToDisplay, 2, 2);
+            break;
+          case "xml":
+            contents = self.dataToXml(itemsToDisplay);
+            break;
+          default:
+            throw "export format " + format + "not implemented";
+        }
+      }
+      if (contents)
+        FileUtil.exportfile(filename, contents, exportFormat.type);
+    }
   }
 
   /**
